@@ -5,4 +5,10 @@
 .git/
 
 Thumbs.db
-.DS_Store
+.DS_Store/config/database.php
+/config/database.local.backup.php
+/uploads/*
+!/uploads/.gitkeep
+.env
+.env.*
+!.env.example
