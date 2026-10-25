@@ -1,7 +1,31 @@
 <?php
 session_start();
 
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../login.php");
+    exit();
+}
+
 include '../config/database.php';
+
+$user_id = (int) $_SESSION['user_id'];
+
+$stmt = mysqli_prepare(
+    $conn,
+    "SELECT role FROM users WHERE id = ? LIMIT 1"
+);
+
+mysqli_stmt_bind_param($stmt, "i", $user_id);
+mysqli_stmt_execute($stmt);
+
+$result = mysqli_stmt_get_result($stmt);
+$user = mysqli_fetch_assoc($result);
+mysqli_stmt_close($stmt);
+
+if (!$user || $user['role'] !== 'admin') {
+    http_response_code(403);
+    exit("Access denied. Administrators only.");
+}
 
 $total = mysqli_num_rows(
     mysqli_query($conn, "SELECT * FROM print_requests")
