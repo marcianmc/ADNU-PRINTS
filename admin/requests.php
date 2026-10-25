@@ -1,48 +1,98 @@
 <?php
 session_start();
 
+if (!isset($_SESSION['user_id'])) {
+    header("Location: ../login.php");
+    exit();
+}
+
 include '../config/database.php';
 
-if(isset($_POST['update_status'])){
+$user_id = (int) $_SESSION['user_id'];
 
-    $id = $_POST['request_id'];
-    $status = $_POST['status'];
+$roleStmt = mysqli_prepare(
+    $conn,
+    "SELECT role FROM users WHERE id = ? LIMIT 1"
+);
+mysqli_stmt_bind_param($roleStmt, "i", $user_id);
+mysqli_stmt_execute($roleStmt);
+$roleResult = mysqli_stmt_get_result($roleStmt);
+$roleData = mysqli_fetch_assoc($roleResult);
+mysqli_stmt_close($roleStmt);
 
-    mysqli_query(
+if (!$roleData || $roleData['role'] !== 'admin') {
+    http_response_code(403);
+    exit("Access denied. Administrators only.");
+}
+
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
+if (isset($_POST['update_status'])) {
+
+    if (!hash_equals(
+        $_SESSION['csrf_token'],
+        $_POST['csrf_token'] ?? ''
+    )) {
+        http_response_code(403);
+        exit("Invalid request token. Please refresh the page.");
+    }
+
+    $id = filter_var(
+        $_POST['request_id'] ?? null,
+        FILTER_VALIDATE_INT
+    );
+
+    $status = $_POST['status'] ?? '';
+
+    $allowedStatuses = [
+        'Pending',
+        'In Progress',
+        'Printing',
+        'Ready for Pickup',
+        'Completed'
+    ];
+
+    if (!$id || $id < 1 || !in_array($status, $allowedStatuses, true)) {
+        http_response_code(400);
+        exit("Invalid request or status.");
+    }
+
+    $stmt = mysqli_prepare(
         $conn,
         "UPDATE print_requests
-        SET status='$status',
-        updated_at=NOW()
-        WHERE id='$id'"
+         SET status = ?, updated_at = NOW()
+         WHERE id = ?"
     );
+
+    mysqli_stmt_bind_param($stmt, "si", $status, $id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
 
     header("Location: requests.php");
     exit();
 }
 
-$search = "";
+$search = trim($_GET['search'] ?? '');
+$search = substr($search, 0, 100);
+$pattern = '%' . $search . '%';
 
-if(isset($_GET['search'])){
-    $search = $_GET['search'];
-}
-
-$requests = mysqli_query(
+$stmt = mysqli_prepare(
     $conn,
-    "SELECT
-        pr.*,
-        u.fullname,
-        u.student_id
-    FROM print_requests pr
-    INNER JOIN users u
-    ON pr.user_id = u.id
-    WHERE
-    u.fullname LIKE '%$search%'
-    OR pr.filename LIKE '%$search%'
-    OR pr.queue_number LIKE '%$search%'
-    ORDER BY pr.queue_number ASC"
+    "SELECT pr.*, u.fullname, u.student_id
+     FROM print_requests pr
+     INNER JOIN users u ON pr.user_id = u.id
+     WHERE u.fullname LIKE ?
+        OR pr.filename LIKE ?
+        OR CAST(pr.queue_number AS CHAR) LIKE ?
+     ORDER BY pr.queue_number ASC"
 );
-?>
 
+mysqli_stmt_bind_param($stmt, "sss", $pattern, $pattern, $pattern);
+mysqli_stmt_execute($stmt);
+$requests = mysqli_stmt_get_result($stmt);
+?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -180,7 +230,7 @@ type="text"
 name="search"
 class="form-control"
 placeholder="Search student, file, or queue number..."
-value="<?php echo $search; ?>">
+value="<?php echo htmlspecialchars($search, ENT_QUOTES, "UTF-8"); ?>">
 
 </div>
 
@@ -213,18 +263,18 @@ Queue #<?php echo $row['queue_number']; ?>
 <p class="mb-1">
 
 <strong>
-<?php echo $row['fullname']; ?>
+<?php echo htmlspecialchars($row['fullname'], ENT_QUOTES, "UTF-8"); ?>
 </strong>
 
 </p>
 
 <p class="text-muted mb-1">
 Student ID:
-<?php echo $row['student_id']; ?>
+<?php echo htmlspecialchars($row['student_id'], ENT_QUOTES, "UTF-8"); ?>
 </p>
 
 <p class="mb-1">
-<?php echo $row['filename']; ?>
+<?php echo htmlspecialchars($row['filename'], ENT_QUOTES, "UTF-8"); ?>
 </p>
 
 <p class="mb-1">
@@ -267,7 +317,7 @@ elseif($row['status']=="Completed"){
 ?>
 
 <span class="badge-custom <?php echo $statusClass; ?>">
-<?php echo $row['status']; ?>
+<?php echo htmlspecialchars($row['status'], ENT_QUOTES, "UTF-8"); ?>
 </span>
 
 </div>
@@ -275,6 +325,8 @@ elseif($row['status']=="Completed"){
 <div class="col-md-4">
 
 <form method="POST">
+<input type="hidden" name="csrf_token"
+value="<?php echo htmlspecialchars($_SESSION['csrf_token'], ENT_QUOTES, 'UTF-8'); ?>">
 
 <input
 type="hidden"

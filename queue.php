@@ -286,7 +286,23 @@ Track your print request in real time.
 
 <p class="mt-3">
 Current Status:
-<strong><?php echo $request['status']; ?></strong>
+<?php
+$status = $request['status'];
+
+$badgeColors = [
+    'Pending' => 'bg-warning text-dark',
+    'In Progress' => 'bg-info text-dark',
+    'Printing' => 'bg-primary',
+    'Ready for Pickup' => 'bg-success',
+    'Completed' => 'bg-secondary'
+];
+
+$badgeClass = $badgeColors[$status] ?? 'bg-secondary';
+?>
+
+<span class="badge <?php echo $badgeClass; ?> fs-6">
+<?php echo htmlspecialchars($status, ENT_QUOTES, 'UTF-8'); ?>
+</span>
 </p>
 
 </div>
@@ -388,7 +404,7 @@ Recently Completed Requests
 </td>
 
 <td>
-<?php echo $row['filename']; ?>
+<?php echo htmlspecialchars($row['filename'], ENT_QUOTES, "UTF-8"); ?>
 </td>
 
 <td>
