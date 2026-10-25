@@ -1,0 +1,9 @@
+.git
+.vscode
+.env
+.env.*
+config/database.php
+config/*.backup.php
+uploads/*
+!uploads/.htaccess
+*.backup
