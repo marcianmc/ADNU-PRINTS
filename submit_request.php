@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-if(!isset($_SESSION['user_id'])){
+if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
     exit();
 }
@@ -10,113 +10,145 @@ include 'config/database.php';
 
 $message = "";
 
-if(isset($_POST['submit_request'])){
+if (isset($_POST['submit_request'])) {
 
-    $user_id = $_SESSION['user_id'];
+    $user_id = (int) $_SESSION['user_id'];
+    $copies = filter_var($_POST['copies'] ?? null, FILTER_VALIDATE_INT);
+    $pages = filter_var($_POST['pages'] ?? null, FILTER_VALIDATE_INT);
 
-    $copies = (int)$_POST['copies'];
-    $pages = (int)$_POST['pages'];
+    $paper_size = $_POST['paper_size'] ?? '';
+    $color_mode = $_POST['color_mode'] ?? '';
+    $print_type = $_POST['print_type'] ?? '';
+    $orientation = $_POST['orientation'] ?? '';
 
-    $paper_size = $_POST['paper_size'];
-    $color_mode = $_POST['color_mode'];
-    $print_type = $_POST['print_type'];
-    $orientation = $_POST['orientation'];
+    $error = "";
 
-    if($color_mode == "Colored"){
-        $estimated_cost = $pages * $copies * 5;
-    }else{
-        $estimated_cost = $pages * $copies * 1;
+    if (!$copies || !$pages || $copies < 1 || $pages < 1 || $copies > 100 || $pages > 1000) {
+        $error = "Please enter valid copies (1-100) and pages (1-1000).";
     }
 
-   $filename = $_FILES['document']['name'];
-$tempname = $_FILES['document']['tmp_name'];
-
-$new_filename = time() . "_" . $filename;
-
-$upload_dir = __DIR__ . "/uploads/";
-
-if (!is_dir($upload_dir)) {
-    mkdir($upload_dir, 0777, true);
-}
-
-$file_path = $upload_dir . $new_filename;
-
-if (move_uploaded_file($tempname, $file_path)) {
-
-    $queue_query = mysqli_query(
-        $conn,
-        "SELECT MAX(queue_number) AS last_queue FROM print_requests"
-    );
-
-    if(!$queue_query){
-        die("QUEUE ERROR: " . mysqli_error($conn));
+    if (
+        !in_array($paper_size, ['A4', 'Letter', 'Legal'], true) ||
+        !in_array($color_mode, ['Black & White', 'Colored'], true) ||
+        !in_array($print_type, ['Single Sided', 'Double Sided'], true) ||
+        !in_array($orientation, ['Portrait', 'Landscape'], true)
+    ) {
+        $error = "Invalid printing options.";
     }
 
-    $queue_data = mysqli_fetch_assoc($queue_query);
-
-    $queue_number = ($queue_data['last_queue'] ?? 0) + 1;
-
-    $sql = "INSERT INTO print_requests
-    (
-        user_id,
-        filename,
-        file_path,
-        copies,
-        paper_size,
-        color_mode,
-        pages,
-        print_type,
-        orientation,
-        queue_number,
-        estimated_cost
-    )
-    VALUES
-    (
-        '$user_id',
-        '$filename',
-        '$file_path',
-        '$copies',
-        '$paper_size',
-        '$color_mode',
-        '$pages',
-        '$print_type',
-        '$orientation',
-        '$queue_number',
-        '$estimated_cost'
-    )";
-
-    if(mysqli_query($conn, $sql)){
-
-        $message = "
-        <div class='alert alert-success'>
-        Request Submitted Successfully!<br>
-        Queue Number: <strong>$queue_number</strong><br>
-        Estimated Cost: <strong>₱$estimated_cost</strong>
-        </div>";
-
-    }else{
-
-        die("INSERT ERROR: " . mysqli_error($conn));
-
+    if (!isset($_FILES['document']) || $_FILES['document']['error'] !== UPLOAD_ERR_OK) {
+        $error = "Please select a valid document to upload.";
     }
 
-}else{
+    if (!$error) {
+        $file = $_FILES['document'];
+        $filename = basename(str_replace('\\', '/', $file['name']));
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 
-    echo "<pre>";
-echo "Temp Name: " . $tempname . "<br>";
-echo "Destination: " . $file_path . "<br>";
-echo "Upload Error Code: " . $_FILES['document']['error'] . "<br>";
-echo "Uploads folder exists: " . (is_dir($upload_dir) ? "YES" : "NO") . "<br>";
-echo "Uploads folder writable: " . (is_writable($upload_dir) ? "YES" : "NO") . "<br>";
-var_dump($_FILES);
-exit();
+        $allowed = ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png'];
+        $max_size = 10 * 1024 * 1024;
 
+        if (!in_array($extension, $allowed, true)) {
+            $error = "Only PDF, DOC, DOCX, JPG, JPEG, and PNG files are allowed.";
+        } elseif ($file['size'] <= 0 || $file['size'] > $max_size) {
+            $error = "The file must be smaller than 10 MB.";
+        } elseif (!is_uploaded_file($file['tmp_name'])) {
+            $error = "Invalid document upload.";
+        }
+    }
 
-}
+    if (!$error) {
+        $estimated_cost = $pages * $copies *
+            ($color_mode === 'Colored' ? 5 : 1);
 
+        $upload_dir = __DIR__ . "/uploads/";
+
+        if (!is_dir($upload_dir) && !mkdir($upload_dir, 0755, true)) {
+            $error = "Upload folder could not be created.";
+        }
+
+        if (!$error) {
+            $new_filename = bin2hex(random_bytes(16)) . "." . $extension;
+            $file_path = $upload_dir . $new_filename;
+
+            if (!move_uploaded_file($file['tmp_name'], $file_path)) {
+                $error = "Could not save your document. Please try again.";
+            } else {
+                try {
+                    $queue_result = mysqli_query(
+                        $conn,
+                        "SELECT COALESCE(MAX(queue_number), 0) + 1 AS next_queue FROM print_requests"
+                    );
+
+                    if (!$queue_result) {
+                        throw new Exception("Queue query failed");
+                    }
+
+                    $queue_data = mysqli_fetch_assoc($queue_result);
+                    $queue_number = (int) $queue_data['next_queue'];
+
+                    $sql = "INSERT INTO print_requests
+                        (user_id, filename, file_path, copies,
+                         paper_size, color_mode, pages, print_type,
+                         orientation, queue_number, estimated_cost)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+                    $stmt = mysqli_prepare($conn, $sql);
+
+                    if (!$stmt) {
+                        throw new Exception("Prepare failed");
+                    }
+
+                    mysqli_stmt_bind_param(
+                        $stmt,
+                        "issississid",
+                        $user_id,
+                        $filename,
+                        $file_path,
+                        $copies,
+                        $paper_size,
+                        $color_mode,
+                        $pages,
+                        $print_type,
+                        $orientation,
+                        $queue_number,
+                        $estimated_cost
+                    );
+
+                    if (!mysqli_stmt_execute($stmt)) {
+                        throw new Exception("Insert failed");
+                    }
+
+                    mysqli_stmt_close($stmt);
+
+                    $message = '<div class="alert alert-success">
+                        Request Submitted Successfully!<br>
+                        Queue Number: <strong>' . $queue_number . '</strong><br>
+                        Estimated Cost: <strong>&#8369;' .
+                        number_format($estimated_cost, 2) . '</strong>
+                        <br><a href="queue.php">View Queue</a>
+                        </div>';
+
+                } catch (Throwable $e) {
+                    error_log("Print request failed: " . $e->getMessage());
+
+                    if (is_file($file_path)) {
+                        unlink($file_path);
+                    }
+
+                    $error = "Could not save your request. Please try again.";
+                }
+            }
+        }
+    }
+
+    if ($error) {
+        $message = '<div class="alert alert-danger">' .
+            htmlspecialchars($error, ENT_QUOTES, 'UTF-8') .
+            '</div>';
+    }
 }
 ?>
-
 <!DOCTYPE html>
 <html>
 <head>
@@ -264,7 +296,7 @@ Document Upload
 <input
 type="file"
 id="document"
-name="document"
+name="document" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
 class="form-control"
 required>
 </div>
@@ -284,7 +316,7 @@ Printing Options
 <input
 type="number"
 id="copies"
-name="copies"
+name="copies" max="100"
 value="1"
 min="1"
 class="form-control"
@@ -296,7 +328,7 @@ required>
 <input
 type="number"
 id="pages"
-name="pages"
+name="pages" max="1000"
 value="1"
 min="1"
 class="form-control"
