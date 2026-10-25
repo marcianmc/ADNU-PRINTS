@@ -9,7 +9,10 @@ if(isset($_POST['register'])){
     $fullname = mysqli_real_escape_string($conn, $_POST['fullname']);
     $student_id = mysqli_real_escape_string($conn, $_POST['student_id']);
     $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $role = mysqli_real_escape_string($conn, $_POST['role']);
+    $requested_role = $_POST['role'] ?? 'student';
+$role = in_array($requested_role, ['student', 'faculty'], true)
+    ? $requested_role
+    : 'student';
 
     $password = password_hash(
         $_POST['password'],
