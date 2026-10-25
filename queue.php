@@ -75,6 +75,8 @@ body{
 
 </style>
 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="mobile.css?v=1">
 </head>
 
 <body>
@@ -240,6 +242,8 @@ text-align:center;
 
 </style>
 
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="mobile.css?v=1">
 </head>
 
 <body>

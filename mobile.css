@@ -1,0 +1,165 @@
+/* ADNU-PRINTS - Responsive Mobile Layout */
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+@media (max-width: 767.98px) {
+
+    body {
+        font-size: 14px;
+    }
+
+    /* Replace tall sidebar with compact top navigation */
+    .sidebar {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: auto !important;
+        height: auto !important;
+        padding: 10px 12px !important;
+        position: relative !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        gap: 6px !important;
+        scrollbar-width: thin;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .sidebar .logo,
+    .sidebar > h2,
+    .sidebar > h1 {
+        display: none !important;
+    }
+
+    .sidebar a {
+        display: inline-flex !important;
+        flex: 0 0 auto !important;
+        white-space: nowrap !important;
+        font-size: 12px !important;
+        padding: 10px 12px !important;
+        margin: 0 !important;
+        border-radius: 8px !important;
+    }
+
+    /* Main content uses the full phone width */
+    .main {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 14px 12px 24px !important;
+        min-width: 0 !important;
+    }
+
+    .container-fluid {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    .main h1, .main h2 {
+        font-size: 21px;
+        margin-bottom: 10px;
+    }
+
+    .main h3 {
+        font-size: 18px;
+    }
+
+    .main h4, .main h5 {
+        font-size: 16px;
+    }
+
+    .main p {
+        margin-bottom: 10px;
+    }
+
+    /* Compact dashboard cards */
+    .card, .card-custom, .card-box,
+    .request-card, .search-card, .summary-box {
+        border-radius: 12px !important;
+        margin-bottom: 12px !important;
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .card-body {
+        padding: 12px !important;
+    }
+
+    .request-card,
+    .search-card {
+        padding: 14px !important;
+    }
+
+    /* Two-column statistics on dashboard */
+    .main > .row > .col-md-3,
+    .main > .row > .col-lg-3,
+    .main > .row > .col-md-4,
+    .main > .row > .col-lg-4 {
+        width: 50% !important;
+        flex: 0 0 50% !important;
+    }
+
+    /* Readable large figures */
+    .big-number {
+        font-size: 48px !important;
+    }
+
+    .queue-banner {
+        padding: 18px !important;
+        border-radius: 12px !important;
+    }
+
+    .stat-card {
+        padding: 12px !important;
+    }
+
+    /* Admin request controls */
+    .request-card .row > [class*="col-"],
+    .search-card .row > [class*="col-"] {
+        width: 100% !important;
+        flex: 0 0 100% !important;
+    }
+
+    /* Tables scroll horizontally instead of breaking the screen */
+    table {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        white-space: nowrap;
+        font-size: 12px;
+    }
+
+    th, td {
+        padding: 8px !important;
+    }
+
+    /* Form usability */
+    input, select, textarea {
+        max-width: 100%;
+        font-size: 16px !important;
+    }
+
+    button, .btn {
+        min-height: 40px;
+    }
+
+    .upload-box {
+        padding: 18px 10px !important;
+    }
+
+    /* Prevent wide content from overflowing */
+    img, canvas, svg {
+        max-width: 100%;
+        height: auto;
+    }
+}
