@@ -734,6 +734,11 @@ Student ID:
 <p class="mb-1">
 <?php echo htmlspecialchars($row['filename'], ENT_QUOTES, "UTF-8"); ?>
 </p>
+<a href="download.php?id=<?php echo (int) $row['id']; ?>"
+   class="btn btn-outline-primary btn-sm mt-2 mb-3">
+    &#11015; Download File
+</a>
+
 
 <p class="mb-1">
 Pages:
