@@ -178,6 +178,427 @@ body{
 </style>
 
 <link rel="stylesheet" href="mobile.css?v=1">
+<style>
+/* ADNU DASHBOARD REDESIGN V1 */
+
+body {
+    background: #f4f7fc !important;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #172445;
+}
+
+.sidebar {
+    background: #192b57 !important;
+}
+
+.sidebar .logo {
+    font-size: 20px;
+    font-weight: 800;
+    padding: 25px 18px;
+}
+
+.sidebar a {
+    border-radius: 9px;
+    margin: 5px 10px;
+    padding: 14px 15px;
+    font-size: 13px;
+}
+
+.sidebar a:hover,
+.sidebar a[href="dashboard.php"] {
+    background: #30477e;
+}
+
+.main {
+    padding: 35px;
+}
+
+.main > h2 {
+    color: #192b57;
+    font-weight: 800;
+}
+
+.stat-card {
+    border-radius: 14px;
+    border: 1px solid #edf0f6;
+    box-shadow: 0 5px 20px rgba(25,43,87,.05);
+}
+
+.stat-card h6 {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.stat-card h2 {
+    color: #192b57;
+    font-size: 36px;
+    font-weight: 800;
+}
+
+.queue-box {
+    background: linear-gradient(120deg, #192b57, #2563eb);
+    border-radius: 16px;
+}
+
+.request-card {
+    border: 1px solid #edf0f6;
+    box-shadow: none;
+}
+
+.quick-card .btn {
+    border-radius: 8px;
+    min-height: 46px;
+    font-weight: 600;
+}
+
+@media (max-width: 767.98px) {
+    .main {
+        padding: 20px 14px !important;
+    }
+
+    .main > h2 {
+        font-size: 23px !important;
+    }
+
+    .stat-card h2 {
+        font-size: 29px !important;
+    }
+
+    .queue-box {
+        padding: 22px;
+    }
+}
+</style>
+
+<style>
+/* ADNU MOBILE SIDEBAR V2 */
+
+.mobile-app-header,
+.mobile-menu-overlay,
+.mobile-sidebar-close {
+    display: none;
+}
+
+@media (max-width: 767.98px) {
+
+    .mobile-app-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        min-height: 65px;
+        padding: 10px 17px;
+        background: #ffffff;
+        border-bottom: 1px solid #e6ecf5;
+        position: relative;
+        z-index: 10;
+    }
+
+    .mobile-app-brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 15px;
+        font-weight: 800;
+        color: #192b57;
+    }
+
+    .mobile-app-brand img {
+        width: 37px;
+        height: 37px;
+        object-fit: contain;
+    }
+
+    .mobile-menu-toggle {
+        width: 45px;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f4f7fc;
+        color: #192b57;
+        border: 1px solid #e2e8f2;
+        border-radius: 10px;
+        font-size: 24px;
+        cursor: pointer;
+    }
+
+    /* Hidden sidebar */
+
+    #mobileSidebar.sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: min(300px, 85vw) !important;
+        max-width: 85vw !important;
+        height: 100dvh !important;
+        min-height: 0 !important;
+        padding: 60px 12px 20px !important;
+        margin: 0 !important;
+
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        flex-wrap: nowrap !important;
+        gap: 5px !important;
+
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+
+        background: #192b57 !important;
+
+        transform: translateX(-105%);
+        transition: transform .25s ease;
+        z-index: 1002;
+        box-shadow: 10px 0 35px rgba(0,0,0,.15);
+    }
+
+    /* Open sidebar */
+
+    #mobileSidebar.sidebar.mobile-sidebar-open {
+        transform: translateX(0);
+    }
+
+    #mobileSidebar .logo {
+        display: none !important;
+    }
+
+    #mobileSidebar .user-box {
+        display: block !important;
+        width: 100%;
+        padding: 15px 12px 20px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid rgba(255,255,255,.15);
+    }
+
+    #mobileSidebar .user-box h5 {
+        color: white;
+        font-size: 16px;
+        overflow-wrap: anywhere;
+    }
+
+    #mobileSidebar .user-box small {
+        color: #bdc9e6;
+    }
+
+    #mobileSidebar.sidebar a {
+        display: block !important;
+        width: 100% !important;
+        flex: 0 0 auto !important;
+        white-space: normal !important;
+        padding: 15px 14px !important;
+        margin: 2px 0 !important;
+        font-size: 14px !important;
+        border-radius: 9px !important;
+        color: #eef2ff !important;
+        text-decoration: none;
+    }
+
+    #mobileSidebar.sidebar a:hover,
+    #mobileSidebar.sidebar a:focus-visible {
+        background: #30477e !important;
+    }
+
+    #mobileSidebar.sidebar a[href="dashboard.php"] {
+        background: #30477e !important;
+    }
+
+    .mobile-sidebar-close {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        position: absolute;
+        top: 12px;
+        right: 13px;
+
+        width: 40px;
+        height: 40px;
+        border: 1px solid rgba(255,255,255,.2);
+        border-radius: 9px;
+        background: rgba(255,255,255,.1);
+        color: white;
+        font-size: 28px;
+        cursor: pointer;
+    }
+
+    .mobile-menu-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(10,20,45,.55);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity .25s ease, visibility .25s ease;
+        z-index: 1001;
+    }
+
+    .mobile-menu-overlay.is-visible {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    body.mobile-menu-active {
+        overflow: hidden;
+    }
+
+    .main {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 20px 15px 35px !important;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #mobileSidebar.sidebar,
+    .mobile-menu-overlay {
+        transition: none !important;
+    }
+}
+</style>
+
+<style>
+/* ADNU DASHBOARD THEME V1 */
+
+.dashboard-theme-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+
+.dashboard-theme-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 43px;
+    padding: 10px 17px;
+    border: 1px solid #dce5f2;
+    border-radius: 10px;
+    background: white;
+    color: #192b57;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s, color .2s;
+}
+
+.dashboard-theme-button:hover {
+    background: #edf4ff;
+}
+
+.dashboard-theme-button:focus-visible {
+    outline: 3px solid #60a5fa;
+    outline-offset: 2px;
+}
+
+#dashboardThemeIcon {
+    font-size: 21px;
+    line-height: 1;
+}
+
+/* DARK MODE */
+
+body.adnu-dark {
+    background: #101827 !important;
+    color: #e8eef8 !important;
+}
+
+body.adnu-dark .main {
+    background: #101827 !important;
+    color: #e8eef8 !important;
+}
+
+body.adnu-dark .main > h2 {
+    color: #f1f5f9 !important;
+}
+
+body.adnu-dark .main > p,
+body.adnu-dark .main .text-muted {
+    color: #a8b5ca !important;
+}
+
+body.adnu-dark .main .card,
+body.adnu-dark .main .stat-card,
+body.adnu-dark .main .quick-card,
+body.adnu-dark .main .request-card {
+    background: #1e293b !important;
+    color: #e8eef8 !important;
+    border-color: #334155 !important;
+    box-shadow: none !important;
+}
+
+body.adnu-dark .main .card-header {
+    background: #1e293b !important;
+    color: #f1f5f9 !important;
+    border-color: #334155 !important;
+}
+
+body.adnu-dark .main .card-header h4,
+body.adnu-dark .main .stat-card h2,
+body.adnu-dark .main .request-card h6,
+body.adnu-dark .main h3,
+body.adnu-dark .main h4,
+body.adnu-dark .main h5 {
+    color: #f1f5f9 !important;
+}
+
+body.adnu-dark .main .stat-card h6,
+body.adnu-dark .main .request-card p {
+    color: #a8b5ca !important;
+}
+
+body.adnu-dark .queue-box {
+    background: linear-gradient(120deg, #172554, #1d4ed8) !important;
+    color: white !important;
+}
+
+body.adnu-dark .queue-box h1,
+body.adnu-dark .queue-box h5,
+body.adnu-dark .queue-box p {
+    color: white !important;
+}
+
+body.adnu-dark .dashboard-theme-button {
+    background: #26364d;
+    color: #f1f5f9;
+    border-color: #42536b;
+}
+
+body.adnu-dark .dashboard-theme-button:hover {
+    background: #334155;
+}
+
+body.adnu-dark .mobile-app-header {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+}
+
+body.adnu-dark .mobile-app-brand {
+    color: #f1f5f9 !important;
+}
+
+body.adnu-dark .mobile-menu-toggle {
+    background: #334155 !important;
+    color: #f1f5f9 !important;
+    border-color: #475569 !important;
+}
+
+@media (max-width: 767.98px) {
+
+    .dashboard-theme-toolbar {
+        margin-bottom: 18px;
+    }
+
+    .dashboard-theme-button {
+        min-height: 44px;
+        padding: 10px 14px;
+        font-size: 12px;
+    }
+}
+</style>
 </head>
 
 <body>
@@ -186,7 +607,35 @@ body{
 
 <div class="row">
 
-<div class="col-md-2 sidebar p-0">
+<div class="mobile-app-header">
+    <div class="mobile-app-brand">
+        <img src="assets/images/ateneo-logo.png" alt="Ateneo Seal">
+        <span>ADNU-PRINTS</span>
+    </div>
+
+    <button
+        type="button"
+        class="mobile-menu-toggle"
+        id="mobileMenuToggle"
+        aria-label="Open navigation menu"
+        aria-controls="mobileSidebar"
+        aria-expanded="false"
+    >
+        <span>&#9776;</span>
+    </button>
+</div>
+
+<div id="mobileMenuOverlay" class="mobile-menu-overlay"></div>
+<div class="col-md-2 sidebar p-0" id="mobileSidebar">
+
+<button
+    type="button"
+    class="mobile-sidebar-close"
+    id="mobileSidebarClose"
+    aria-label="Close navigation menu"
+>
+    &times;
+</button>
 
 <div class="logo">
 ADNU-PRINTS
@@ -197,19 +646,32 @@ ADNU-PRINTS
 <small>Student Account</small>
 </div>
 
-<a href="dashboard.php">🏠 Dashboard</a>
-<a href="submit_request.php">🖨 Submit Request</a>
-<a href="queue.php">📋 Queue Monitor</a>
-<a href="history.php">📄 Transaction History</a>
-<a href="logout.php">🚪 Logout</a>
+<a href="dashboard.php">Dashboard</a>
+<a href="submit_request.php">Submit Request</a>
+<a href="queue.php">Queue Monitor</a>
+<a href="history.php">Transaction History</a>
+<a href="logout.php">Logout</a>
 
 </div>
 
 <div class="col-md-10 main">
 
+<div class="dashboard-theme-toolbar">
+    <button
+        type="button"
+        id="dashboardThemeToggle"
+        class="dashboard-theme-button"
+        aria-label="Switch to dark mode"
+        aria-pressed="false"
+    >
+        <span id="dashboardThemeIcon">&#9790;</span>
+        <span id="dashboardThemeText">Dark Mode</span>
+    </button>
+</div>
+
 <h2>
 Good Day,
-<?php echo $_SESSION['fullname']; ?> 👋
+<?php echo $_SESSION['fullname']; ?>
 </h2>
 
 <p class="text-muted">
@@ -388,6 +850,102 @@ Transaction History
 
 </div>
 
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const sidebar = document.getElementById("mobileSidebar");
+    const toggle = document.getElementById("mobileMenuToggle");
+    const closeButton = document.getElementById("mobileSidebarClose");
+    const overlay = document.getElementById("mobileMenuOverlay");
+
+    if (!sidebar || !toggle || !closeButton || !overlay) return;
+
+    function openMenu() {
+        sidebar.classList.add("mobile-sidebar-open");
+        overlay.classList.add("is-visible");
+        document.body.classList.add("mobile-menu-active");
+        toggle.setAttribute("aria-expanded", "true");
+        toggle.setAttribute("aria-label", "Close navigation menu");
+        closeButton.focus();
+    }
+
+    function closeMenu() {
+        sidebar.classList.remove("mobile-sidebar-open");
+        overlay.classList.remove("is-visible");
+        document.body.classList.remove("mobile-menu-active");
+        toggle.setAttribute("aria-expanded", "false");
+        toggle.setAttribute("aria-label", "Open navigation menu");
+        toggle.focus();
+    }
+
+    toggle.addEventListener("click", function () {
+        if (sidebar.classList.contains("mobile-sidebar-open")) {
+            closeMenu();
+        } else {
+            openMenu();
+        }
+    });
+
+    closeButton.addEventListener("click", closeMenu);
+    overlay.addEventListener("click", closeMenu);
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" &&
+            sidebar.classList.contains("mobile-sidebar-open")) {
+            closeMenu();
+        }
+    });
+
+    window.addEventListener("resize", function () {
+        if (window.innerWidth >= 768 &&
+            sidebar.classList.contains("mobile-sidebar-open")) {
+            closeMenu();
+        }
+    });
+
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const button = document.getElementById("dashboardThemeToggle");
+    const text = document.getElementById("dashboardThemeText");
+    const icon = document.getElementById("dashboardThemeIcon");
+
+    if (!button || !text || !icon) return;
+
+    // Always start in Light Mode.
+    const savedTheme = localStorage.getItem("adnu-prints-theme");
+const savedDark = savedTheme === "dark";
+
+document.body.classList.toggle("adnu-dark", savedDark);
+
+    text.textContent = savedDark ? "Light Mode" : "Dark Mode";
+icon.innerHTML = savedDark ? "&#9728;" : "&#9790;";
+button.setAttribute("aria-pressed", String(savedDark));
+button.setAttribute(
+    "aria-label",
+    savedDark ? "Switch to light mode" : "Switch to dark mode"
+);
+button.addEventListener("click", function () {
+
+        const dark = document.body.classList.toggle("adnu-dark");
+localStorage.setItem("adnu-prints-theme", dark ? "dark" : "light");
+
+        text.textContent = dark ? "Light Mode" : "Dark Mode";
+        icon.innerHTML = dark ? "&#9728;" : "&#9790;";
+
+        button.setAttribute(
+            "aria-label",
+            dark ? "Switch to light mode" : "Switch to dark mode"
+        );
+
+        button.setAttribute("aria-pressed", String(dark));
+
+    });
+
+});
+</script>
 </body>
 </html>
 ```
