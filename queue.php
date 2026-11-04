@@ -10,16 +10,62 @@ include 'config/database.php';
 
 $user_id = $_SESSION['user_id'];
 
-$current = mysqli_query(
-$conn,
-"SELECT *
-FROM print_requests
-WHERE user_id='$user_id'
-ORDER BY queue_number DESC
-LIMIT 1"
+$studentId = (int) $_SESSION['user_id'];
+
+$selectedRequestId = filter_input(
+    INPUT_GET,
+    'request_id',
+    FILTER_VALIDATE_INT
 );
 
-$request = mysqli_fetch_assoc($current);
+$selectedRequestId = (
+    $selectedRequestId && $selectedRequestId > 0
+) ? (int) $selectedRequestId : 0;
+
+$request = null;
+
+// Try the student's selected active request first.
+if ($selectedRequestId > 0) {
+    $stmt = mysqli_prepare(
+        $conn,
+        "SELECT *
+         FROM print_requests
+         WHERE id = ?
+           AND user_id = ?
+           AND status != 'Completed'
+         LIMIT 1"
+    );
+
+    mysqli_stmt_bind_param(
+        $stmt,
+        "ii",
+        $selectedRequestId,
+        $studentId
+    );
+
+    mysqli_stmt_execute($stmt);
+    $request = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+    mysqli_stmt_close($stmt);
+}
+
+// If nothing was selected, or it was completed,
+// display the student's latest active request.
+if (!$request) {
+    $stmt = mysqli_prepare(
+        $conn,
+        "SELECT *
+         FROM print_requests
+         WHERE user_id = ?
+           AND status != 'Completed'
+         ORDER BY queue_number DESC
+         LIMIT 1"
+    );
+
+    mysqli_stmt_bind_param($stmt, "i", $studentId);
+    mysqli_stmt_execute($stmt);
+    $request = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+    mysqli_stmt_close($stmt);
+}
 
 if(!$request){
 ?>
@@ -562,12 +608,12 @@ Track your print request in real time.
 <div class="empty-icon">No requests yet</div>
 
 <h2 class="mt-4">
-No Print Requests Yet
+No Active Print Requests
 </h2>
 
 <p class="text-muted mt-3">
-You haven't submitted any printing requests yet.
-Once you create a request, your queue status and progress will appear here.
+You don't have any active printing requests.
+Completed requests can be viewed in Transaction History. Submit a new request to join the queue.
 </p>
 
 <a href="submit_request.php"
@@ -662,6 +708,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 </script>
+<script>
+(function () {
+    // Refresh queue information every 15 seconds.
+    setInterval(function () {
+        if (document.visibilityState === "visible") {
+            window.location.reload();
+        }
+    }, 15000);
+})();
+</script>
 </body>
 </html>
 <?php
@@ -669,34 +725,41 @@ exit();
 }
 $queue_number = $request['queue_number'];
 
-$ahead = mysqli_num_rows(
-mysqli_query(
-$conn,
-"SELECT *
-FROM print_requests
-WHERE queue_number < '$queue_number'
-AND status!='Completed'"
-)
+$queue_number = (int) $queue_number;
+
+$waitingStatuses = "'Pending','In Progress','Printing'";
+
+$aheadResult = mysqli_query(
+    $conn,
+    "SELECT COUNT(*) AS total
+     FROM print_requests
+     WHERE queue_number < $queue_number
+     AND status IN ($waitingStatuses)"
 );
 
-$total_queue = mysqli_num_rows(
-mysqli_query(
-$conn,
-"SELECT *
-FROM print_requests
-WHERE status!='Completed'"
-)
+$aheadData = mysqli_fetch_assoc($aheadResult);
+$ahead = (int) ($aheadData['total'] ?? 0);
+
+$totalResult = mysqli_query(
+    $conn,
+    "SELECT COUNT(*) AS total
+     FROM print_requests
+     WHERE status IN ($waitingStatuses)"
 );
+
+$totalData = mysqli_fetch_assoc($totalResult);
+$total_queue = (int) ($totalData['total'] ?? 0);
 
 $estimate = $ahead * 2;
+$studentId = (int) $user_id;
 
-$completed = mysqli_query(
-$conn,
-"SELECT *
-FROM print_requests
-WHERE status='Completed'
-ORDER BY updated_at DESC
-LIMIT 5"
+$activeRequests = mysqli_query(
+    $conn,
+    "SELECT id, queue_number, filename, status
+     FROM print_requests
+     WHERE user_id = $studentId
+       AND status != 'Completed'
+     ORDER BY queue_number ASC"
 );
 ?>
 
@@ -1297,7 +1360,17 @@ $badgeClass = $badgeColors[$status] ?? 'bg-secondary';
 <div class="stat-card mb-3">
 
 <h2>
-~<?php echo $estimate; ?> min
+<?php
+if ($status === 'Ready for Pickup') {
+    echo 'Ready to collect';
+} elseif ($status === 'Printing') {
+    echo 'Printing now';
+} elseif ($status === 'In Progress') {
+    echo 'Being prepared';
+} else {
+    echo '~' . $estimate . ' min';
+}
+?>
 </h2>
 
 <div>Estimated Wait</div>
@@ -1330,11 +1403,15 @@ Queue Progress
 
 <?php
 
-$progress = 0;
+$progressByStatus = [
+    'Pending' => 10,
+    'In Progress' => 35,
+    'Printing' => 65,
+    'Ready for Pickup' => 90,
+    'Completed' => 100
+];
 
-if($total_queue > 0){
-$progress = (($total_queue - $ahead) / $total_queue) * 100;
-}
+$progress = $progressByStatus[$status] ?? 0;
 
 ?>
 
@@ -1358,41 +1435,91 @@ style="width: <?php echo $progress; ?>%">
 
 <div class="card-body">
 
-<h4>
-Recently Completed Requests
-</h4>
+<h4>My Active Print Requests</h4>
 
-<table class="table">
-
+<div class="table-responsive">
+<table class="table align-middle">
+<thead>
 <tr>
-<th>Queue</th>
-<th>File</th>
-<th>Status</th>
+    <th>Queue</th>
+    <th>Document</th>
+    <th>Status</th>
+    <th>Progress</th>
+</tr>
+</thead>
+<tbody>
+
+<?php if (mysqli_num_rows($activeRequests) === 0): ?>
+<tr>
+    <td colspan="4" class="text-center py-4">
+        No active requests.
+    </td>
+</tr>
+<?php else: ?>
+
+<?php while ($row = mysqli_fetch_assoc($activeRequests)): ?>
+<?php
+    $stages = [
+        'Pending' => 10,
+        'In Progress' => 35,
+        'Printing' => 65,
+        'Ready for Pickup' => 90
+    ];
+
+    $stage = $stages[$row['status']] ?? 0;
+
+    $badge = [
+        'Pending' => 'bg-warning text-dark',
+        'In Progress' => 'bg-info text-dark',
+        'Printing' => 'bg-primary',
+        'Ready for Pickup' => 'bg-success'
+    ];
+
+    $badgeClass = $badge[$row['status']] ?? 'bg-secondary';
+?>
+
+<tr
+    role="link"
+    tabindex="0"
+    data-href="queue.php?request_id=<?php echo (int) $row['id']; ?>"
+    onclick="window.location.href = this.dataset.href"
+    onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); window.location.href = this.dataset.href; }"
+    style="cursor: pointer; <?php if ((int) $row['id'] === (int) $request['id']) echo 'outline: 2px solid #2563eb; outline-offset: -2px;'; ?>"
+>
+    <td>
+    <a href="queue.php?request_id=<?php echo (int) $row['id']; ?>"
+       class="fw-bold text-primary text-decoration-none">
+        #<?php echo (int) $row['queue_number']; ?>
+    </a>
+</td>
+
+    <td>
+        <?php echo htmlspecialchars(
+            $row['filename'],
+            ENT_QUOTES,
+            'UTF-8'
+        ); ?>
+    </td>
+
+    <td>
+        <span class="badge <?php echo $badgeClass; ?>">
+            <?php echo htmlspecialchars(
+                $row['status'],
+                ENT_QUOTES,
+                'UTF-8'
+            ); ?>
+        </span>
+    </td>
+
+    <td><?php echo $stage; ?>%</td>
 </tr>
 
-<?php while($row = mysqli_fetch_assoc($completed)){ ?>
+<?php endwhile; ?>
+<?php endif; ?>
 
-<tr>
-
-<td>
-#<?php echo $row['queue_number']; ?>
-</td>
-
-<td>
-<?php echo htmlspecialchars($row['filename'], ENT_QUOTES, "UTF-8"); ?>
-</td>
-
-<td>
-<span class="badge bg-success">
-Completed
-</span>
-</td>
-
-</tr>
-
-<?php } ?>
-
+</tbody>
 </table>
+</div>
 
 </div>
 
@@ -1480,6 +1607,16 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
 });
+</script>
+<script>
+(function () {
+    // Refresh queue information every 15 seconds.
+    setInterval(function () {
+        if (document.visibilityState === "visible") {
+            window.location.reload();
+        }
+    }, 15000);
+})();
 </script>
 </body>
 </html>
