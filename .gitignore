@@ -1,0 +1,17 @@
+/uploads/*
+!/uploads/.gitkeep
+
+.vscode/
+.git/
+
+Thumbs.db
+.DS_Store/config/database.php
+/config/database.local.backup.php
+/uploads/*
+!/uploads/.gitkeep
+.env
+.env.*
+!.env.example
+/config/database.php
+!/uploads/.htaccess
+*.backup
